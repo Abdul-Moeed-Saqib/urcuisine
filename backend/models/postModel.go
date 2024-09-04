@@ -6,7 +6,7 @@ import (
 
 type Post struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty"`
-	UserID      primitive.ObjectID `bson:"user_id,omitempty"`
+	UserID      primitive.ObjectID `bson:"userID,omitempty"`
 	Title       string             `bson:"title,omitempty"`
 	Description string             `bson:"description,omitempty"`
 	VideoURL    string             `bson:"video_url,omitempty"`
@@ -19,7 +19,7 @@ type Post struct {
 
 type Comment struct {
 	ID      primitive.ObjectID `bson:"_id,omitempty"`
-	UserID  primitive.ObjectID `bson:"user_id,omitempty"`
+	UserID  primitive.ObjectID `bson:"userID,omitempty"`
 	Text    string             `bson:"text,omitempty"`
 	Created int64              `bson:"created,omitempty"`
 }

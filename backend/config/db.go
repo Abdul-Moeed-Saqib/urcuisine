@@ -12,7 +12,7 @@ import (
 var DB *mongo.Database
 
 func ConnectDB() {
-	mongoURI := os.Getenv("MONGO_URI")
+	mongoURI := os.Getenv("MONGODB_URI")
 	if mongoURI == "" {
 		log.Fatal("MongoDB URI is not set properly")
 	}
