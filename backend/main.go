@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Abdul-Moeed-Saqib/urcuisine-backend/config"
-	"github.com/Abdul-Moeed-Saqib/urcuisine-backend/middlewares"
+
 	"github.com/Abdul-Moeed-Saqib/urcuisine-backend/routes"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -21,8 +21,6 @@ func main() {
 	config.ConnectDB() // connecting to the database
 
 	router := mux.NewRouter()
-
-	router.Use(middlewares.AuthMiddleware)
 
 	routes.AuthRoutes(router)
 	routes.PostRoutes(router)

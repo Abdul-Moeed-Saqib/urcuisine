@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
 
@@ -31,14 +32,21 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	user.Password = string(hashedPassword)
 
 	collection := config.DB.Collection("users")
-	_, err = collection.InsertOne(context.Background(), user)
+	result, err := collection.InsertOne(context.Background(), user)
 	if err != nil {
 		http.Error(w, "Error creating user", http.StatusInternalServerError)
 		return
 	}
 
+	userID := result.InsertedID.(primitive.ObjectID).Hex()
+	token, err := utils.GenerateJWT(userID)
+	if err != nil {
+		http.Error(w, "Error generating token", http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "User created successfully"})
+	json.NewEncoder(w).Encode(map[string]string{"message": "User created successfully", "token": token})
 }
 
 // Login function to authenticate user and generate JWT token

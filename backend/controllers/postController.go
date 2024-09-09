@@ -17,6 +17,13 @@ import (
 func CreatePost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	userID, ok := r.Context().Value("userID").(string)
+
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
 	var post models.Post
 
 	if err := json.NewDecoder(r.Body).Decode(&post); err != nil {
@@ -25,6 +32,7 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	post.ID = primitive.NewObjectID()
+	post.UserID, _ = primitive.ObjectIDFromHex(userID)
 	post.Likes = 0
 	post.Dislikes = 0
 	post.Comments = []models.Comment{}
@@ -67,10 +75,19 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 func UpdatePost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	userID, ok := r.Context().Value("userID").(string)
+
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
 	var updateData models.Post
 	_ = json.NewDecoder(r.Body).Decode(&updateData)
 
-	filter := bson.M{"_id": updateData.ID}
+	objectID, _ := primitive.ObjectIDFromHex(userID)
+	updateData.UserID = objectID
+	filter := bson.M{"_id": updateData.ID, "userID": objectID}
 	update := bson.M{
 		"$set": bson.M{
 			"title":       updateData.Title,
@@ -95,9 +112,17 @@ func UpdatePost(w http.ResponseWriter, r *http.Request) {
 func DeletePost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	userID, ok := r.Context().Value("userID").(string)
+
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+
 	postID, _ := primitive.ObjectIDFromHex(mux.Vars(r)["id"])
 
-	filter := bson.M{"_id": postID}
+	objectID, _ := primitive.ObjectIDFromHex(userID)
+	filter := bson.M{"_id": postID, "userID": objectID}
 
 	postCollection := config.DB.Collection("posts")
 
