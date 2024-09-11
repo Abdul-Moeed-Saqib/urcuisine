@@ -9,6 +9,7 @@ import (
 func PostRoutes(router *mux.Router) {
 
 	router.HandleFunc("/posts", controllers.GetPosts).Methods("GET")
+	router.HandleFunc("/posts/{id}", controllers.GetPost).Methods("GET")
 
 	authRequired := router.PathPrefix("/posts").Subrouter()
 	authRequired.Use(middlewares.AuthMiddleware)

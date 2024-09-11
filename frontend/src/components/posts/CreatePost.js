@@ -30,6 +30,7 @@ const CreatePost = () => {
       return;
     }
 
+    // Convert recipe tags array to a comma-separated string
     const postData = { ...formData, recipe: formData.recipe.join(', ') };
 
     try {
@@ -73,7 +74,7 @@ const CreatePost = () => {
             <FormLabel>Country</FormLabel>
             <Select name="country" value={formData.country} onChange={handleChange}>
                 <option value="">Select a country</option>
-                {countries.map((country) => (
+                {countryList.map((country) => (
                 <option key={country} value={country}>
                     {country}
                 </option>

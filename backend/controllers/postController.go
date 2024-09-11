@@ -71,6 +71,30 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(posts)
 }
 
+func GetPost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Get the post ID from the URL parameters
+	postID := mux.Vars(r)["id"]
+
+	objectID, err := primitive.ObjectIDFromHex(postID)
+	if err != nil {
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		return
+	}
+
+	postCollection := config.DB.Collection("posts")
+
+	var post models.Post
+	err = postCollection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&post)
+	if err != nil {
+		http.Error(w, "Post not found", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(post)
+}
+
 // handles updating a specific post
 func UpdatePost(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

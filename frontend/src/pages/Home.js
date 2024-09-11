@@ -9,7 +9,7 @@ const Home = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await axios.get('/posts?sort=likes');
+        const response = await axios.get('/posts');
         setPosts(response.data);
       } catch (error) {
         console.error('Error fetching posts', error);
