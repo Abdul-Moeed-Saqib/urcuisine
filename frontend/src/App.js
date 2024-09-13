@@ -3,7 +3,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import PostDetails from './components/posts/PostDetails';
-import Header from './components/Header'; // Ensure your Header component is set up correctly
+import Header from './components/Header';
 import Footer from './components/Footer';
 
 function App() {
