@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import PostDetails from './components/posts/PostDetails';
 import Header from './components/Header'; // Ensure your Header component is set up correctly
+import Footer from './components/Footer';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/post/:id" element={<PostDetails />} />
       </Routes>
+      <Footer />
     </div>
   );
 }

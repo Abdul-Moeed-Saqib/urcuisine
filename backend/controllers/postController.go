@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // handles creating a new post
@@ -55,7 +56,8 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	var posts []models.Post
 	postCollection := config.DB.Collection("posts")
 
-	cursor, err := postCollection.Find(context.Background(), bson.M{})
+	opts := options.Find().SetSort(bson.D{{"likes", -1}}).SetLimit(20)
+	cursor, err := postCollection.Find(context.Background(), bson.M{}, opts)
 	if err != nil {
 		http.Error(w, "Could not fetch posts", http.StatusInternalServerError)
 		return
@@ -93,6 +95,75 @@ func GetPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(post)
+}
+
+// handles fetching related dishes based on the post country
+func GetRelatedPosts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	postID := mux.Vars(r)["id"]
+
+	objectID, err := primitive.ObjectIDFromHex(postID)
+	if err != nil {
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		return
+	}
+
+	postCollection := config.DB.Collection("posts")
+	var post models.Post
+	err = postCollection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&post)
+	if err != nil {
+		http.Error(w, "Post not found", http.StatusNotFound)
+		return
+	}
+
+	var relatedPosts []models.Post
+	cursor, err := postCollection.Find(context.Background(), bson.M{
+		"country": post.Country,
+		"_id":     bson.M{"$ne": post.ID},
+	})
+	if err != nil {
+		http.Error(w, "Could not fetch related posts", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(context.Background()) {
+		var relatedPost models.Post
+		cursor.Decode(&relatedPost)
+		relatedPosts = append(relatedPosts, relatedPost)
+	}
+
+	json.NewEncoder(w).Encode(relatedPosts)
+}
+
+func GetPostsByCountry(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	country := r.URL.Query().Get("country")
+	if country == "" {
+		http.Error(w, "Country not specified", http.StatusBadRequest)
+		return
+	}
+
+	var posts []models.Post
+	postCollection := config.DB.Collection("posts")
+
+	filter := bson.M{"country": country}
+	cursor, err := postCollection.Find(context.Background(), filter)
+	if err != nil {
+		http.Error(w, "Could not fetch posts", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	for cursor.Next(context.Background()) {
+		var post models.Post
+		cursor.Decode(&post)
+		posts = append(posts, post)
+	}
+
+	json.NewEncoder(w).Encode(posts)
 }
 
 // handles updating a specific post
