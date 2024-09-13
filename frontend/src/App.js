@@ -13,6 +13,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/post/:id" element={<PostDetails />} />
+        <Route path="/categories" element={<Category />} /> 
       </Routes>
       <Footer />
     </div>
