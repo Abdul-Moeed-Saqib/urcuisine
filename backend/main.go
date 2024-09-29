@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Abdul-Moeed-Saqib/urcuisine-backend/config"
+	"github.com/Abdul-Moeed-Saqib/urcuisine-backend/middlewares"
 
 	"github.com/Abdul-Moeed-Saqib/urcuisine-backend/routes"
 	"github.com/gorilla/mux"
@@ -25,6 +26,8 @@ func main() {
 	routes.AuthRoutes(router)
 	routes.PostRoutes(router)
 
+	corsRouter := middlewares.CORS(router)
+
 	log.Println("Server is running on port 8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8080", corsRouter))
 }

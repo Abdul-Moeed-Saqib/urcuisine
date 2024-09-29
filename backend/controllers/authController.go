@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -17,6 +18,8 @@ import (
 
 // Signup function to register a new user
 func Signup(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -39,18 +42,28 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := result.InsertedID.(primitive.ObjectID).Hex()
-	token, err := utils.GenerateJWT(userID)
+	token, err := utils.GenerateJWT(userID, user.Name)
 	if err != nil {
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
 		return
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		HttpOnly: true,
+		Expires:  time.Now().Add(72 * time.Hour),
+		Path:     "/",
+	})
+
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "User created successfully", "token": token})
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
 // Login function to authenticate user and generate JWT token
 func Login(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	var credentials struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -79,11 +92,48 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(user.ID.Hex())
+	token, err := utils.GenerateJWT(user.ID.Hex(), user.Name)
 	if err != nil {
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
 		return
 	}
 
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		HttpOnly: true,
+		Expires:  time.Now().Add(72 * time.Hour),
+		Path:     "/",
+	})
+
+	json.NewEncoder(w).Encode(map[string]string{"token": token})
+}
+
+// Logout function to logging out user by removing the cookie
+func Logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    "",
+		HttpOnly: true,
+		Expires:  time.Now().Add(-1 * time.Hour),
+		Path:     "/",
+	})
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Logged out successfully"))
+}
+
+// ValidateToken function validate if user is logged in
+func ValidateToken(w http.ResponseWriter, r *http.Request) {
+	tokenCookie, err := r.Cookie("token")
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"token": ""})
+		return
+	}
+
+	token := tokenCookie.Value
+
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
