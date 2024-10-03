@@ -5,7 +5,6 @@ import { jwtDecode } from 'jwt-decode';
 const AuthContext = createContext();
 
 const AUTH_STATE_KEY = 'authState'; 
-const EXPIRY_DURATION = 3 * 24 * 60 * 60 * 1000; // 3 days in milliseconds
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -22,23 +21,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const setAuthState = (state) => {
-    const expiryTime = new Date().getTime() + EXPIRY_DURATION; 
-    const authData = { authState: state, expiry: expiryTime }; 
-    localStorage.setItem(AUTH_STATE_KEY, JSON.stringify(authData)); 
+    localStorage.setItem(AUTH_STATE_KEY, state); 
   };
 
   // 
   const isAuthValid = () => {
-    const authData = localStorage.getItem(AUTH_STATE_KEY); 
+    const authState = localStorage.getItem(AUTH_STATE_KEY); 
 
-    if (!authData) return false; // 
-
-    const { authState, expiry } = JSON.parse(authData); 
-    const now = new Date().getTime();
-
-    if (authState === 'false' || now > expiry) return false;
-
-    return true;
+    return authState === 'true';
   };
 
   const login = async (credentials) => {

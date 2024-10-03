@@ -3,8 +3,8 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import PostDetails from './components/posts/PostDetails';
-import Login from './components/auth/Login'; // Import Login
-import Signup from './components/auth/Signup'; // Import Signup
+import Login from './components/auth/Login'; 
+import Signup from './components/auth/Signup'; 
 import Header from './components/Header';
 import Footer from './components/Footer';
 

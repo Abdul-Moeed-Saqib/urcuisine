@@ -15,6 +15,17 @@ const PostDetails = () => {
     const fetchPost = async () => {
       try {
         const response = await axios.get(`/posts/${id}`);
+        const postData = response.data;
+
+        if (user) {
+          postData.Comments = postData.Comments.sort((a, b) => {
+            if (a.UserID === user.id) return -1;
+            if (b.UserID === user.id) return 1;
+    
+            return new Date(b.Created * 1000) - new Date(a.Created * 1000);
+          });
+        }
+
         setPost(response.data);
       } catch (error) {
         console.error('Error fetching post details', error);
@@ -32,7 +43,7 @@ const PostDetails = () => {
 
     fetchPost();
     fetchRelatedPosts();
-  }, [id]);
+  }, [id, user]);
 
   const handleLike = async () => {
     if (!user) {
@@ -59,12 +70,16 @@ const PostDetails = () => {
 
     try {
       const response = await axios.post(`/posts/${id}/comments`, {
-        text: commentText,
-        userID: user.id,
+        text: commentText
+      }, {
+        withCredentials: true
       });
+
+      console.log(response.data); 
+      
       setPost((prevPost) => ({
         ...prevPost,
-        Comments: [...prevPost.Comments, response.data],
+        Comments: [response.data, ...prevPost.Comments],
       }));
       setCommentText('');
     } catch (error) {
@@ -150,7 +165,7 @@ const PostDetails = () => {
         {relatedPosts.length > 0 ? (
           relatedPosts.map((relatedPost) => (
             <HStack
-              key={relatedPost.id}
+              key={relatedPost.ID}
               p={3}
               shadow="md"
               borderWidth="1px"

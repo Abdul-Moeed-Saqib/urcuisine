@@ -56,6 +56,7 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	var posts []models.Post
 	postCollection := config.DB.Collection("posts")
 
+	// Fetch posts sorted by Likes in descending order and limit to 20
 	opts := options.Find().SetSort(bson.D{{"likes", -1}}).SetLimit(20)
 	cursor, err := postCollection.Find(context.Background(), bson.M{}, opts)
 	if err != nil {
@@ -97,11 +98,11 @@ func GetPost(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(post)
 }
 
-// handles fetching related dishes based on the post country
+// handles fetching related dishes based on the post's country
 func GetRelatedPosts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	postID := mux.Vars(r)["id"]
+	postID := mux.Vars(r)["id"] // post ID from the URL parameters
 
 	objectID, err := primitive.ObjectIDFromHex(postID)
 	if err != nil {
@@ -120,7 +121,7 @@ func GetRelatedPosts(w http.ResponseWriter, r *http.Request) {
 	var relatedPosts []models.Post
 	cursor, err := postCollection.Find(context.Background(), bson.M{
 		"country": post.Country,
-		"_id":     bson.M{"$ne": post.ID},
+		"_id":     bson.M{"$ne": post.ID}, // this removes the current post
 	})
 	if err != nil {
 		http.Error(w, "Could not fetch related posts", http.StatusInternalServerError)
@@ -241,29 +242,45 @@ func AddComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, ok := r.Context().Value("userID").(primitive.ObjectID)
-
+	userID, ok := r.Context().Value("userID").(string)
 	if !ok {
 		http.Error(w, "User not authenticated", http.StatusUnauthorized)
 		return
 	}
 
+	enduserID, _ := primitive.ObjectIDFromHex(userID)
+
+	var user models.User
+	userCollection := config.DB.Collection("users")
+	err := userCollection.FindOne(context.Background(), bson.M{"_id": enduserID}).Decode(&user)
+	if err != nil {
+		http.Error(w, "User not found", http.StatusInternalServerError)
+		return
+	}
+
 	comment.ID = primitive.NewObjectID()
-	comment.UserID = userID
+	comment.UserID = enduserID
+	comment.Name = user.Name
 	comment.Created = time.Now().Unix()
 
 	postID, _ := primitive.ObjectIDFromHex(mux.Vars(r)["id"])
-
 	filter := bson.M{"_id": postID}
 	update := bson.M{"$push": bson.M{"comments": comment}}
 
 	postCollection := config.DB.Collection("posts")
-
-	_, err := postCollection.UpdateOne(context.Background(), filter, update)
+	_, err = postCollection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
 		http.Error(w, "Could not add comment", http.StatusInternalServerError)
 		return
 	}
+
+	// commentResponse := map[string]interface{}{
+	// 	"id":      comment.ID,
+	// 	"userID":  comment.UserID,
+	// 	"Text":    comment.Text,
+	// 	"Created": comment.Created,
+	// 	"Name":    user.Name,
+	// }
 
 	json.NewEncoder(w).Encode(comment)
 }

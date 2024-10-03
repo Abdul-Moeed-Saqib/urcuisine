@@ -17,7 +17,7 @@ const Login = () => {
     e.preventDefault();
     try {
       await login(credentials);
-      navigate('/'); // Redirect to homepage after successful login
+      navigate('/'); 
     } catch (err) {
       setError('Failed to log in. Please check your credentials.');
     }

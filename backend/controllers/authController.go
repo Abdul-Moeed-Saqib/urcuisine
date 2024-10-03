@@ -14,7 +14,10 @@ import (
 	"github.com/Abdul-Moeed-Saqib/urcuisine-backend/config"
 	"github.com/Abdul-Moeed-Saqib/urcuisine-backend/models"
 	"github.com/Abdul-Moeed-Saqib/urcuisine-backend/utils"
+	"github.com/go-playground/validator/v10"
 )
+
+var validate = validator.New()
 
 // Signup function to register a new user
 func Signup(w http.ResponseWriter, r *http.Request) {
@@ -27,6 +30,42 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = validate.Struct(user)
+
+	if err != nil {
+		errorMessages := make(map[string]string)
+
+		for _, err := range err.(validator.ValidationErrors) {
+			switch err.Field() {
+			case "Email":
+				errorMessages["email"] = "Invalid email format. Please enter a valid email."
+			case "Password":
+				errorMessages["password"] = "Password must be at least 8 characters long, contain one number and one special character."
+			case "Name":
+				errorMessages["name"] = "Name is required."
+			default:
+				errorMessages[err.Field()] = "Invalid input."
+			}
+		}
+
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(errorMessages)
+		return
+	}
+
+	collection := config.DB.Collection("users")
+
+	var existingUser models.User
+	err = collection.FindOne(context.Background(), bson.M{"email": user.Email}).Decode(&existingUser)
+
+	if err == nil {
+		http.Error(w, "Email already exists", http.StatusBadRequest)
+		return
+	} else if err != mongo.ErrNoDocuments {
+		http.Error(w, "Error checking existing user", http.StatusInternalServerError)
+		return
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
@@ -34,7 +73,6 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	}
 	user.Password = string(hashedPassword)
 
-	collection := config.DB.Collection("users")
 	result, err := collection.InsertOne(context.Background(), user)
 	if err != nil {
 		http.Error(w, "Error creating user", http.StatusInternalServerError)
@@ -79,7 +117,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	err = collection.FindOne(context.Background(), bson.M{"email": credentials.Email}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+			http.Error(w, "Invalid  Email", http.StatusUnauthorized)
 			return
 		}
 		http.Error(w, "Error finding user", http.StatusInternalServerError)
@@ -88,7 +126,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
 	if err != nil {
-		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		http.Error(w, "Invalid password", http.StatusUnauthorized)
 		return
 	}
 

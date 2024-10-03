@@ -20,6 +20,7 @@ type Post struct {
 type Comment struct {
 	ID      primitive.ObjectID `bson:"_id,omitempty"`
 	UserID  primitive.ObjectID `bson:"userID,omitempty"`
+	Name    string             `bson:"name,omitempty"`
 	Text    string             `bson:"text,omitempty"`
 	Created int64              `bson:"created,omitempty"`
 }
