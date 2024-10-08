@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem(AUTH_STATE_KEY, state); 
   };
 
-  // 
   const isAuthValid = () => {
     const authState = localStorage.getItem(AUTH_STATE_KEY); 
 
@@ -33,34 +32,28 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const response = await axios.post('/auth/login', credentials, {
-        withCredentials: true, 
-      });
+      const response = await axios.post('/auth/login', credentials);
 
       const token = response.data.token; 
       const decodedToken = decodeToken(token); 
-      setUser({ name: decodedToken.name }); 
+      setUser({ name: decodedToken.name, id: decodedToken.userID }); 
 
       setAuthState('true'); 
     } catch (error) {
-      console.error('Login failed', error);
       throw error;
     }
   };
 
   const signup = async (credentials) => {
     try {
-      const response = await axios.post('/auth/signup', credentials, {
-        withCredentials: true, 
-      });
+      const response = await axios.post('/auth/signup', credentials);
 
       const token = response.data.token; 
       const decodedToken = decodeToken(token); 
-      setUser({ name: decodedToken.name }); 
+      setUser({ name: decodedToken.name, id: decodedToken.userID  }); 
 
       setAuthState('true'); 
     } catch (error) {
-      console.error('Signup failed', error);
       throw error;
     }
   };
@@ -93,7 +86,7 @@ export const AuthProvider = ({ children }) => {
         const token = response.data.token; 
         if (token) {
           const decodedToken = decodeToken(token); 
-          setUser({ name: decodedToken.name }); 
+          setUser({ name: decodedToken.name, id: decodedToken.userID  }); 
         } else {
           setAuthState('false'); 
           setLoading(false);

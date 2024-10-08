@@ -3,16 +3,38 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/Abdul-Moeed-Saqib/urcuisine-backend/config"
 	"github.com/Abdul-Moeed-Saqib/urcuisine-backend/models"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+func getUserIDFromToken(r *http.Request) (string, error) {
+	cookie, err := r.Cookie("token")
+	if err != nil {
+		return "", fmt.Errorf("could not find token in cookies")
+	}
+
+	token, _, err := new(jwt.Parser).ParseUnverified(cookie.Value, jwt.MapClaims{})
+	if err != nil {
+		return "", fmt.Errorf("error decoding token: %v", err)
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		if userID, ok := claims["userID"].(string); ok {
+			return userID, nil
+		}
+	}
+
+	return "", fmt.Errorf("user ID not found in token claims")
+}
 
 // handles creating a new post
 func CreatePost(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +101,6 @@ func GetPost(w http.ResponseWriter, r *http.Request) {
 
 	// Get the post ID from the URL parameters
 	postID := mux.Vars(r)["id"]
-
 	objectID, err := primitive.ObjectIDFromHex(postID)
 	if err != nil {
 		http.Error(w, "Invalid post ID", http.StatusBadRequest)
@@ -93,6 +114,29 @@ func GetPost(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Post not found", http.StatusNotFound)
 		return
+	}
+
+	userID, err := getUserIDFromToken(r)
+	if err == nil {
+		enduserID, _ := primitive.ObjectIDFromHex(userID)
+		userCollection := config.DB.Collection("users")
+
+		var user models.User
+		err := userCollection.FindOne(context.Background(), bson.M{"_id": enduserID}).Decode(&user)
+		if err == nil {
+			response := struct {
+				Post        models.Post          `json:"post"`
+				LikesList   []primitive.ObjectID `json:"likesList"`
+				DislikeList []primitive.ObjectID `json:"dislikeList"`
+			}{
+				Post:        post,
+				LikesList:   user.LikesList,
+				DislikeList: user.DislikeList,
+			}
+
+			json.NewEncoder(w).Encode(response)
+			return
+		}
 	}
 
 	json.NewEncoder(w).Encode(post)
@@ -283,4 +327,114 @@ func AddComment(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	json.NewEncoder(w).Encode(comment)
+}
+
+func LikePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+	enduserID, _ := primitive.ObjectIDFromHex(userID)
+
+	postID := mux.Vars(r)["id"]
+	objectID, err := primitive.ObjectIDFromHex(postID)
+	if err != nil {
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		return
+	}
+
+	postCollection := config.DB.Collection("posts")
+	userCollection := config.DB.Collection("users")
+
+	// Check if the user has already liked the post
+	userFilter := bson.M{"_id": enduserID, "likesList": objectID}
+	var existingUser models.User
+	err = userCollection.FindOne(context.Background(), userFilter).Decode(&existingUser)
+
+	if err == nil {
+		_, _ = userCollection.UpdateOne(context.Background(), bson.M{"_id": enduserID}, bson.M{
+			"$pull": bson.M{"likesList": objectID},
+		})
+		_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
+			"$inc": bson.M{"likes": -1},
+		})
+	} else {
+		_, _ = userCollection.UpdateOne(context.Background(), bson.M{"_id": enduserID}, bson.M{
+			"$addToSet": bson.M{"likesList": objectID},
+			"$pull":     bson.M{"dislikeList": objectID},
+		})
+
+		_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
+			"$inc": bson.M{"likes": 1},
+		})
+
+		// Check if the user previously disliked the post
+		userDislikeFilter := bson.M{"_id": enduserID, "dislikeList": objectID}
+		err := userCollection.FindOne(context.Background(), userDislikeFilter).Decode(&existingUser)
+		if err == nil {
+			_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
+				"$inc": bson.M{"dislikes": -1},
+			})
+		}
+	}
+
+	json.NewEncoder(w).Encode("Like status updated successfully")
+}
+
+func DislikePost(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok {
+		http.Error(w, "User not authenticated", http.StatusUnauthorized)
+		return
+	}
+	enduserID, _ := primitive.ObjectIDFromHex(userID)
+
+	postID := mux.Vars(r)["id"]
+	objectID, err := primitive.ObjectIDFromHex(postID)
+	if err != nil {
+		http.Error(w, "Invalid post ID", http.StatusBadRequest)
+		return
+	}
+
+	postCollection := config.DB.Collection("posts")
+	userCollection := config.DB.Collection("users")
+
+	// Check if the user has already disliked the post
+	userFilter := bson.M{"_id": enduserID, "dislikeList": objectID}
+	var existingUser models.User
+	err = userCollection.FindOne(context.Background(), userFilter).Decode(&existingUser)
+
+	if err == nil {
+		_, _ = userCollection.UpdateOne(context.Background(), bson.M{"_id": enduserID}, bson.M{
+			"$pull": bson.M{"dislikeList": objectID},
+		})
+		_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
+			"$inc": bson.M{"dislikes": -1},
+		})
+	} else {
+		_, _ = userCollection.UpdateOne(context.Background(), bson.M{"_id": enduserID}, bson.M{
+			"$addToSet": bson.M{"dislikeList": objectID},
+			"$pull":     bson.M{"likesList": objectID},
+		})
+
+		_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
+			"$inc": bson.M{"dislikes": 1},
+		})
+
+		// Check if the user previously liked the post
+		userLikeFilter := bson.M{"_id": enduserID, "likesList": objectID}
+		err := userCollection.FindOne(context.Background(), userLikeFilter).Decode(&existingUser)
+		if err == nil {
+			_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
+				"$inc": bson.M{"likes": -1},
+			})
+		}
+	}
+
+	json.NewEncoder(w).Encode("Dislike status updated successfully")
 }

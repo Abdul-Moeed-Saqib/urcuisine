@@ -20,4 +20,6 @@ func PostRoutes(router *mux.Router) {
 	authRequired.HandleFunc("/{id}", controllers.UpdatePost).Methods("PUT")
 	authRequired.HandleFunc("/{id}", controllers.DeletePost).Methods("DELETE")
 	authRequired.HandleFunc("/{id}/comments", controllers.AddComment).Methods("POST")
+	authRequired.HandleFunc("/{id}/like", controllers.LikePost).Methods("POST")
+	authRequired.HandleFunc("/{id}/dislike", controllers.DislikePost).Methods("POST")
 }

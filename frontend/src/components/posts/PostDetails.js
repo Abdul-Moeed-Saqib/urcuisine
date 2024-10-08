@@ -10,23 +10,33 @@ const PostDetails = () => {
   const [post, setPost] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [relatedPosts, setRelatedPosts] = useState([]);
+  const [liked, setLiked] = useState(false);
+  const [disliked, setDisliked] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
       try {
         const response = await axios.get(`/posts/${id}`);
-        const postData = response.data;
+        const { post: postData, likesList, dislikeList } = response.data;
 
         if (user) {
-          postData.Comments = postData.Comments.sort((a, b) => {
+          const liked = likesList?.includes(id);
+          const disliked = dislikeList?.includes(id);
+
+          setLiked(liked);
+          setDisliked(disliked);
+
+          postData.Comments = postData.Comments?.sort((a, b) => {
             if (a.UserID === user.id) return -1;
             if (b.UserID === user.id) return 1;
     
             return new Date(b.Created * 1000) - new Date(a.Created * 1000);
           });
-        }
 
-        setPost(response.data);
+          setPost(postData)
+        } else {
+          setPost(response.data);
+        }
       } catch (error) {
         console.error('Error fetching post details', error);
       }
@@ -50,7 +60,19 @@ const PostDetails = () => {
       alert('Please log in to like this post');
       return;
     }
-    
+
+    try {
+      const response = await axios.post(`/posts/${id}/like`, {}, { withCredentials: true });
+      setLiked(!liked);
+      setDisliked(false);
+      setPost((prevPost) => ({
+        ...prevPost,
+        Likes: liked ? prevPost.Likes - 1 : prevPost.Likes + 1,
+        Dislikes: disliked ? prevPost.Dislikes - 1 : prevPost.Dislikes,
+      }));
+    } catch (error) {
+      console.error('Error liking post', error);
+    }
   };
 
   const handleDislike = async () => {
@@ -58,7 +80,19 @@ const PostDetails = () => {
       alert('Please log in to dislike this post');
       return;
     }
-   
+
+    try {
+      const response = await axios.post(`/posts/${id}/dislike`, {}, { withCredentials: true });
+      setDisliked(!disliked);
+      setLiked(false); 
+      setPost((prevPost) => ({
+        ...prevPost,
+        Dislikes: disliked ? prevPost.Dislikes - 1 : prevPost.Dislikes + 1,
+        Likes: liked ? prevPost.Likes - 1 : prevPost.Likes,
+      }));
+    } catch (error) {
+      console.error('Error disliking post', error);
+    }
   };
 
   const handleComment = async (e) => {
@@ -75,8 +109,6 @@ const PostDetails = () => {
         withCredentials: true
       });
 
-      console.log(response.data); 
-      
       setPost((prevPost) => ({
         ...prevPost,
         Comments: [response.data, ...prevPost.Comments],
@@ -91,28 +123,24 @@ const PostDetails = () => {
 
   return (
     <Flex direction={{ base: 'column', lg: 'row' }} p={8} gap={8}>
-      
       <Box flex="3">
         <Heading mb={2}>{post.Title}</Heading>
         <Text fontSize="lg" color="gray.600" mb={4}>{post.Description}</Text>
 
-        
         <Box mt={4}>
           <Heading size="md" mb={2}>Recipe:</Heading>
           <Text>{post.Recipe}</Text>
         </Box>
 
-        
         <HStack spacing={4} mt={6}>
-          <Button onClick={handleLike} colorScheme="teal">
-            Like {post.Likes}
+          <Button onClick={handleLike} colorScheme={liked ? 'teal' : 'gray'}>
+            {liked ? 'Liked' : 'Like'} {post.Likes}
           </Button>
-          <Button onClick={handleDislike} colorScheme="red">
-            Dislike {post.Dislikes}
+          <Button onClick={handleDislike} colorScheme={disliked ? 'red' : 'gray'}>
+            {disliked ? 'Disliked' : 'Dislike'} {post.Dislikes}
           </Button>
         </HStack>
 
-       
         <Box mt={8}>
           <Heading size="md" mb={4}>Comments:</Heading>
 
@@ -134,7 +162,7 @@ const PostDetails = () => {
 
           <Divider my={4} />
 
-          {post.Comments != null && post.Comments.length > 0 ? (
+          {post.Comments && post.Comments.length > 0 ? (
             <VStack align="start" spacing={4} mt={2} w="full">
               {post.Comments.map((comment, index) => (
                 <Flex
@@ -145,7 +173,7 @@ const PostDetails = () => {
                   borderRadius="md"
                   w="full"
                   direction="column"
-                  alignItems="flex-start" // Ensures details are on the left
+                  alignItems="flex-start"
                 >
                   <Text fontSize="sm" color="gray.600">
                     {comment.Name} - {new Date(comment.Created * 1000).toLocaleString()}

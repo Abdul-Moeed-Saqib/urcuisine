@@ -59,7 +59,8 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	err = collection.FindOne(context.Background(), bson.M{"email": user.Email}).Decode(&existingUser)
 
 	if err == nil {
-		http.Error(w, "Email already exists", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"email": "Email already exists"})
 		return
 	} else if err != mongo.ErrNoDocuments {
 		http.Error(w, "Error checking existing user", http.StatusInternalServerError)
@@ -98,7 +99,7 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"token": token})
 }
 
-// Login function to authenticate user and generate JWT token
+// Login function to logging the user in and generating a token for it
 func Login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -117,7 +118,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	err = collection.FindOne(context.Background(), bson.M{"email": credentials.Email}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			http.Error(w, "Invalid  Email", http.StatusUnauthorized)
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]string{"email": "Invalid Email"})
 			return
 		}
 		http.Error(w, "Error finding user", http.StatusInternalServerError)
@@ -126,7 +128,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
 	if err != nil {
-		http.Error(w, "Invalid password", http.StatusUnauthorized)
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(map[string]string{"password": "Invalid password"})
 		return
 	}
 
@@ -161,7 +164,7 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Logged out successfully"))
 }
 
-// ValidateToken function validate if user is logged in
+// ValidateToken function validates if the user is logged in
 func ValidateToken(w http.ResponseWriter, r *http.Request) {
 	tokenCookie, err := r.Cookie("token")
 	if err != nil {
