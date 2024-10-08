@@ -371,17 +371,24 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 			"$inc": bson.M{"likes": 1},
 		})
 
-		// Check if the user previously disliked the post
-		userDislikeFilter := bson.M{"_id": enduserID, "dislikeList": objectID}
-		err := userCollection.FindOne(context.Background(), userDislikeFilter).Decode(&existingUser)
-		if err == nil {
-			_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
-				"$inc": bson.M{"dislikes": -1},
-			})
-		}
+		_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
+			"$inc": bson.M{"dislikes": -1},
+		})
 	}
 
-	json.NewEncoder(w).Encode("Like status updated successfully")
+	var post models.Post
+	err = postCollection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&post)
+	if err != nil {
+		http.Error(w, "Failed to retrieve post", http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]interface{}{
+		"likes":    post.Likes,
+		"dislikes": post.Dislikes,
+	}
+
+	json.NewEncoder(w).Encode(response)
 }
 
 func DislikePost(w http.ResponseWriter, r *http.Request) {
@@ -426,15 +433,22 @@ func DislikePost(w http.ResponseWriter, r *http.Request) {
 			"$inc": bson.M{"dislikes": 1},
 		})
 
-		// Check if the user previously liked the post
-		userLikeFilter := bson.M{"_id": enduserID, "likesList": objectID}
-		err := userCollection.FindOne(context.Background(), userLikeFilter).Decode(&existingUser)
-		if err == nil {
-			_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
-				"$inc": bson.M{"likes": -1},
-			})
-		}
+		_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
+			"$inc": bson.M{"likes": -1},
+		})
 	}
 
-	json.NewEncoder(w).Encode("Dislike status updated successfully")
+	var post models.Post
+	err = postCollection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&post)
+	if err != nil {
+		http.Error(w, "Failed to retrieve post", http.StatusInternalServerError)
+		return
+	}
+
+	response := map[string]interface{}{
+		"likes":    post.Likes,
+		"dislikes": post.Dislikes,
+	}
+
+	json.NewEncoder(w).Encode(response)
 }

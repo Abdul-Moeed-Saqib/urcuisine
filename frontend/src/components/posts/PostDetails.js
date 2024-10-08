@@ -61,17 +61,36 @@ const PostDetails = () => {
       return;
     }
 
+    const wasLiked = liked;
+    const wasDisliked = disliked;
+    setLiked(!liked);
+    setDisliked(false);
+    setPost((prevPost) => ({
+      ...prevPost,
+      Likes: liked ? prevPost.Likes - 1 : prevPost.Likes + 1,
+      Dislikes: disliked ? prevPost.Dislikes - 1 : prevPost.Dislikes,
+    }));
+
     try {
       const response = await axios.post(`/posts/${id}/like`, {}, { withCredentials: true });
+
       setLiked(!liked);
       setDisliked(false);
       setPost((prevPost) => ({
         ...prevPost,
-        Likes: liked ? prevPost.Likes - 1 : prevPost.Likes + 1,
-        Dislikes: disliked ? prevPost.Dislikes - 1 : prevPost.Dislikes,
+        Likes: response.data.likes,
+        Dislikes: response.data.dislikes,
       }));
     } catch (error) {
       console.error('Error liking post', error);
+
+      setLiked(wasLiked);
+      setDisliked(wasDisliked);
+      setPost((prevPost) => ({
+        ...prevPost,
+        Likes: wasLiked ? prevPost.Likes + 1 : prevPost.Likes - 1,
+        Dislikes: wasDisliked ? prevPost.Dislikes + 1 : prevPost.Dislikes,
+      }));
     }
   };
 
@@ -81,17 +100,34 @@ const PostDetails = () => {
       return;
     }
 
+    const wasLiked = liked;
+    const wasDisliked = disliked;
+    setDisliked(!disliked);
+    setLiked(false);
+    setPost((prevPost) => ({
+      ...prevPost,
+      Dislikes: disliked ? prevPost.Dislikes - 1 : prevPost.Dislikes + 1,
+      Likes: liked ? prevPost.Likes - 1 : prevPost.Likes,
+    }));
+
     try {
       const response = await axios.post(`/posts/${id}/dislike`, {}, { withCredentials: true });
-      setDisliked(!disliked);
-      setLiked(false); 
+
       setPost((prevPost) => ({
         ...prevPost,
-        Dislikes: disliked ? prevPost.Dislikes - 1 : prevPost.Dislikes + 1,
-        Likes: liked ? prevPost.Likes - 1 : prevPost.Likes,
+        Likes: response.data.likes,
+        Dislikes: response.data.dislikes,
       }));
     } catch (error) {
       console.error('Error disliking post', error);
+
+      setDisliked(wasDisliked);
+      setLiked(wasLiked);
+      setPost((prevPost) => ({
+        ...prevPost,
+        Dislikes: wasDisliked ? prevPost.Dislikes + 1 : prevPost.Dislikes - 1,
+        Likes: wasLiked ? prevPost.Likes + 1 : prevPost.Likes - 1,
+      }));
     }
   };
 
