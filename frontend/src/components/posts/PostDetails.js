@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
-import { Box, Button, Text, Heading, Textarea, VStack, HStack, Divider, Flex, Image } from '@chakra-ui/react';
+import { Box, Button, Text, Heading, Textarea, VStack, HStack, Divider, Flex, Image, useToast } from '@chakra-ui/react';
 
 const PostDetails = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const toast = useToast();
+
   const [post, setPost] = useState(null);
   const [commentText, setCommentText] = useState('');
   const [relatedPosts, setRelatedPosts] = useState([]);
@@ -57,7 +59,13 @@ const PostDetails = () => {
 
   const handleLike = async () => {
     if (!user) {
-      alert('Please log in to like this post');
+      toast({
+        title: 'Like this post?',
+        description: "Please log in to like this post.",
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+      })
       return;
     }
 
@@ -96,7 +104,13 @@ const PostDetails = () => {
 
   const handleDislike = async () => {
     if (!user) {
-      alert('Please log in to dislike this post');
+      toast({
+        title: 'Dislike this post?',
+        description: "Please log in to dislike this post.",
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+      })
       return;
     }
 
@@ -147,7 +161,7 @@ const PostDetails = () => {
 
       setPost((prevPost) => ({
         ...prevPost,
-        Comments: [response.data, ...prevPost.Comments],
+        Comments: [response.data, ...(prevPost.Comments || [])],
       }));
       setCommentText('');
     } catch (error) {
@@ -188,7 +202,7 @@ const PostDetails = () => {
                 onChange={(e) => setCommentText(e.target.value)}
                 mb={2}
               />
-              <Button type="submit" colorScheme="blue">
+              <Button type="submit" colorScheme="blue"  isDisabled={!commentText}>
                 Add Comment
               </Button>
             </Box>
@@ -226,7 +240,7 @@ const PostDetails = () => {
 
       <Box flex="1" pl={{ base: 0, lg: 4 }}>
         <Heading size="md" mb={4}>Related Dishes:</Heading>
-        {relatedPosts.length > 0 ? (
+        {relatedPosts && relatedPosts.length > 0 ? (
           relatedPosts.map((relatedPost) => (
             <HStack
               key={relatedPost.ID}

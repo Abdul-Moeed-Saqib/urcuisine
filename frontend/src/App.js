@@ -7,6 +7,8 @@ import Login from './components/auth/Login';
 import Signup from './components/auth/Signup'; 
 import Header from './components/Header';
 import Footer from './components/Footer';
+import ProtectedRoute from './components/ProtectedRoute';
+import CreatePost from './components/posts/CreatePost';
 
 function App() {
   return (
@@ -17,6 +19,14 @@ function App() {
         <Route path="/post/:id" element={<PostDetails />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route
+          path="/create"
+          element={
+            <ProtectedRoute>
+              <CreatePost />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
       <Footer />
     </div>

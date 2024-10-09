@@ -9,7 +9,7 @@ type Post struct {
 	UserID      primitive.ObjectID `bson:"userID,omitempty"`
 	Title       string             `bson:"title,omitempty"`
 	Description string             `bson:"description,omitempty"`
-	VideoURL    string             `bson:"video_url,omitempty"`
+	VideoURL    string             `json:"video_url" bson:"video_url"`
 	Recipe      string             `bson:"recipe,omitempty"`
 	Country     string             `bson:"country,omitempty"`
 	Likes       int                `bson:"likes,omitempty"`

@@ -20,6 +20,9 @@ const Header = () => {
         <Spinner color="white" />
       ) : user ? (
         <Flex alignItems="center">
+          <Button as={RouterLink} to="/create" colorScheme="green" mr="4">
+            Create Post
+          </Button>
          <Text mr={4}>Welcome, {user.name}!</Text>
          <Button colorScheme="red" onClick={logout}>
            Logout

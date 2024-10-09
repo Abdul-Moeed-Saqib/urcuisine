@@ -21,7 +21,7 @@ const Home = () => {
 
   return (
     <Box p="6">
-      <Heading mb="4">Popular Dishes</Heading>
+      <Heading mb="4">Welcome!</Heading>
       <PostList posts={posts} />
     </Box>
   );
