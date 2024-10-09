@@ -362,6 +362,14 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 			"$inc": bson.M{"likes": -1},
 		})
 	} else {
+		userDislikeFilter := bson.M{"_id": enduserID, "dislikeList": objectID}
+		err := userCollection.FindOne(context.Background(), userDislikeFilter).Decode(&existingUser)
+		if err == nil {
+			_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
+				"$inc": bson.M{"dislikes": -1},
+			})
+		}
+
 		_, _ = userCollection.UpdateOne(context.Background(), bson.M{"_id": enduserID}, bson.M{
 			"$addToSet": bson.M{"likesList": objectID},
 			"$pull":     bson.M{"dislikeList": objectID},
@@ -369,10 +377,6 @@ func LikePost(w http.ResponseWriter, r *http.Request) {
 
 		_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
 			"$inc": bson.M{"likes": 1},
-		})
-
-		_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
-			"$inc": bson.M{"dislikes": -1},
 		})
 	}
 
@@ -424,6 +428,14 @@ func DislikePost(w http.ResponseWriter, r *http.Request) {
 			"$inc": bson.M{"dislikes": -1},
 		})
 	} else {
+		userLikeFilter := bson.M{"_id": enduserID, "likesList": objectID}
+		err := userCollection.FindOne(context.Background(), userLikeFilter).Decode(&existingUser)
+		if err == nil {
+			_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
+				"$inc": bson.M{"likes": -1},
+			})
+		}
+
 		_, _ = userCollection.UpdateOne(context.Background(), bson.M{"_id": enduserID}, bson.M{
 			"$addToSet": bson.M{"dislikeList": objectID},
 			"$pull":     bson.M{"likesList": objectID},
@@ -431,10 +443,6 @@ func DislikePost(w http.ResponseWriter, r *http.Request) {
 
 		_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
 			"$inc": bson.M{"dislikes": 1},
-		})
-
-		_, _ = postCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{
-			"$inc": bson.M{"likes": -1},
 		})
 	}
 
