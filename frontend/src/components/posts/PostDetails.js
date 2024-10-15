@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import { Box, Button, Text, Heading, Textarea, VStack, HStack, Divider, Flex, Image, useToast } from '@chakra-ui/react';
 
 const PostDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const toast = useToast();
 
@@ -169,13 +170,50 @@ const PostDetails = () => {
     }
   };
 
+  const handleUpdatePost = () => {
+    navigate(`/post/${id}/edit`);
+  };
+
+  const getYouTubeEmbedUrl = (url) => {
+    if (!url || typeof url !== 'string') {
+      return null; 
+    }
+  
+    const match = url.match(
+      /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    );
+    return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+  };
+
+
   if (!post) return <div>Loading...</div>;
+
+  const youtubeEmbedUrl = getYouTubeEmbedUrl(post.video_url);
 
   return (
     <Flex direction={{ base: 'column', lg: 'row' }} p={8} gap={8}>
       <Box flex="3">
         <Heading mb={2}>{post.Title}</Heading>
+        {youtubeEmbedUrl && (
+          <Box mb={4}>
+            <iframe
+              width="100%"
+              height="500"
+              src={youtubeEmbedUrl}
+              title="YouTube video player"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          </Box>
+        )}
         <Text fontSize="lg" color="gray.600" mb={4}>{post.Description}</Text>
+
+        {user && post.UserID === user.id && (
+          <Button onClick={handleUpdatePost} colorScheme="blue" mt={4}>
+            Edit Post
+          </Button>
+        )}
 
         <Box mt={4}>
           <Heading size="md" mb={2}>Recipe:</Heading>

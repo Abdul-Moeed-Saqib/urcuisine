@@ -9,6 +9,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import CreatePost from './components/posts/CreatePost';
+import UpdatePost from './components/posts/UpdatePost';
 
 function App() {
   return (
@@ -24,6 +25,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CreatePost />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/post/:id/edit"
+          element={
+            <ProtectedRoute>
+              <UpdatePost />
             </ProtectedRoute>
           }
         />

@@ -19,13 +19,16 @@ import {
   Flex,
   VStack,
   Divider,
+  useToast
 } from '@chakra-ui/react';
 import countryList from 'country-list';
 import axios from 'axios';
 
 const CreatePost = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const { user } = useAuth();
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -68,13 +71,30 @@ const CreatePost = () => {
       return;
     }
 
+    if (formData.recipe.length < 3) {
+      toast({
+        title: 'Please add at least 3 recipes before creating the post.',
+        position: "top",
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
+
     const postData = { ...formData, recipe: formData.recipe.join(', ') }; // array to string
 
     try {
       const response = await axios.post('/posts', postData, { withCredentials: true });
       const createdPostId = response.data.ID; 
       
-      //toast.success('Post created successfully!');
+      toast({
+        title: 'Post created successfully!',
+        position: "top",
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      })
       navigate(`/post/${createdPostId}`); 
     } catch (error) {
       console.error('Error creating post', error);
@@ -103,7 +123,7 @@ const CreatePost = () => {
             <Input type="url" name="video_url" value={formData.video_url} onChange={handleChange} />
           </FormControl>
 
-          <FormControl id="recipe" mb="4" isRequired>
+          <FormControl id="recipe" mb="4">
             <FormLabel>Recipe</FormLabel>
             <Input
               placeholder="Add ingredients or steps and press Enter..."
