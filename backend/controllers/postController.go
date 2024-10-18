@@ -13,7 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func getUserIDFromToken(r *http.Request) (string, error) {
@@ -60,15 +60,30 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	post.Dislikes = 0
 	post.Comments = []models.Comment{}
 
+	createdAt := time.Now().Unix()
+	postMap := bson.M{
+		"_id":         post.ID,
+		"userID":      post.UserID,
+		"title":       post.Title,
+		"description": post.Description,
+		"videoURL":    post.VideoURL,
+		"recipe":      post.Recipe,
+		"country":     post.Country,
+		"likes":       post.Likes,
+		"dislikes":    post.Dislikes,
+		"comments":    post.Comments,
+		"createdAt":   createdAt,
+	}
+
 	postCollection := config.DB.Collection("posts")
 
-	_, err := postCollection.InsertOne(context.Background(), post)
+	_, err := postCollection.InsertOne(context.Background(), postMap)
 	if err != nil {
 		http.Error(w, "Could not create post", http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(post)
+	json.NewEncoder(w).Encode(postMap)
 }
 
 // handles fetching all posts
@@ -78,9 +93,12 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 	var posts []models.Post
 	postCollection := config.DB.Collection("posts")
 
-	// Fetch posts sorted by Likes in descending order and limit to 20
-	opts := options.Find().SetSort(bson.D{{"likes", -1}}).SetLimit(20)
-	cursor, err := postCollection.Find(context.Background(), bson.M{}, opts)
+	pipeline := mongo.Pipeline{
+		{{"$match", bson.M{"likes": bson.M{"$gt": 0}}}},
+		{{"$sample", bson.M{"size": 10}}},
+	}
+
+	cursor, err := postCollection.Aggregate(context.Background(), pipeline)
 	if err != nil {
 		http.Error(w, "Could not fetch posts", http.StatusInternalServerError)
 		return
@@ -89,7 +107,10 @@ func GetPosts(w http.ResponseWriter, r *http.Request) {
 
 	for cursor.Next(context.Background()) {
 		var post models.Post
-		cursor.Decode(&post)
+		if err := cursor.Decode(&post); err != nil {
+			http.Error(w, "Error decoding post", http.StatusInternalServerError)
+			return
+		}
 		posts = append(posts, post)
 	}
 
