@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
-import { Box, Button, Text, Heading, Textarea, VStack, HStack, Divider, Flex, Image, useToast } from '@chakra-ui/react';
+import { Box, Button, Text, Heading, Textarea, VStack, HStack, Divider, Flex, Image, useToast, Tooltip } from '@chakra-ui/react';
 
 const PostDetails = () => {
   const { id } = useParams();
@@ -191,123 +191,130 @@ const PostDetails = () => {
   const youtubeEmbedUrl = getYouTubeEmbedUrl(post.video_url);
 
   return (
-    <Flex direction={{ base: 'column', lg: 'row' }} p={8} gap={8}>
-      <Box flex="3">
-        <Heading mb={2}>{post.Title}</Heading>
-        {youtubeEmbedUrl && (
-          <Box mb={4}>
-            <iframe
-              width="100%"
-              height="500"
-              src={youtubeEmbedUrl}
-              title="YouTube video player"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
+    <Box display="flex" justifyContent="center" alignItems="center" p={8}>
+      <Box maxW="1200px" w="100%" display="flex" flexDirection={{ base: 'column', lg: 'row' }} gap={8}>
+        <Box flex="3">
+          <Heading mb={2}>{post.Title}</Heading>
+          {youtubeEmbedUrl && (
+            <Box mb={4} display="flex" justifyContent="center">
+              <iframe
+                width="80%"
+                height="450px"
+                src={youtubeEmbedUrl}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
           </Box>
-        )}
-        <Text fontSize="lg" color="gray.600" mb={4}>{post.Description}</Text>
+          )}
+          <Text fontSize="lg" color="gray.600" mb={4}>
+            <Tooltip label={`Created at: ${new Date(post.createdAt).toLocaleDateString()}`} aria-label="Post Creation Date">
+              <span>{post.Description}</span>
+            </Tooltip>
+          </Text>
 
-        {user && post.UserID === user.id && (
-          <Button onClick={handleUpdatePost} colorScheme="blue" mt={4}>
-            Edit Post
-          </Button>
-        )}
-
-        <Box mt={4}>
-          <Heading size="md" mb={2}>Recipe:</Heading>
-          <Text>{post.Recipe}</Text>
-        </Box>
-
-        <HStack spacing={4} mt={6}>
-          <Button onClick={handleLike} colorScheme={liked ? 'teal' : 'gray'}>
-            {liked ? 'Liked' : 'Like'} {post.Likes}
-          </Button>
-          <Button onClick={handleDislike} colorScheme={disliked ? 'red' : 'gray'}>
-            {disliked ? 'Disliked' : 'Dislike'} {post.Dislikes}
-          </Button>
-        </HStack>
-
-        <Box mt={8}>
-          <Heading size="md" mb={4}>Comments:</Heading>
-
-          {user ? (
-            <Box as="form" onSubmit={handleComment} mb={4}>
-              <Textarea
-                placeholder="Write your comment..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                mb={2}
-              />
-              <Button type="submit" colorScheme="blue"  isDisabled={!commentText}>
-                Add Comment
-              </Button>
-            </Box>
-          ) : (
-            <Text>Please log in to comment</Text>
+          {user && post.UserID === user.id && (
+            <Button onClick={handleUpdatePost} colorScheme="blue" mt={4}>
+              Edit Post
+            </Button>
           )}
 
-          <Divider my={4} />
+          <Box mt={4}>
+            <Heading size="md" mb={2}>Recipe:</Heading>
+            <Text>{post.Recipe}</Text>
+          </Box>
 
-          {post.Comments && post.Comments.length > 0 ? (
-            <VStack align="start" spacing={4} mt={2} w="full">
-              {post.Comments.map((comment, index) => (
-                <Flex
-                  key={index}
-                  p={3}
-                  shadow="md"
-                  borderWidth="1px"
-                  borderRadius="md"
-                  w="full"
-                  direction="column"
-                  alignItems="flex-start"
-                >
-                  <Text fontSize="sm" color="gray.600">
-                    {comment.Name} - {new Date(comment.Created * 1000).toLocaleString()}
-                  </Text>
-                  <Text mt={1}>{comment.Text}</Text>
-                </Flex>
-              ))}
-            </VStack>
-          ) : (
-            <Text>No comments yet. Be the first to comment!</Text>
-          )}
-        </Box>
-      </Box>
+          <HStack spacing={4} mt={6}>
+            <Button onClick={handleLike} colorScheme={liked ? 'teal' : 'gray'}>
+              {liked ? 'Liked' : 'Like'} {post.Likes}
+            </Button>
+            <Button onClick={handleDislike} colorScheme={disliked ? 'red' : 'gray'}>
+              {disliked ? 'Disliked' : 'Dislike'} {post.Dislikes}
+            </Button>
+          </HStack>
 
-      <Box flex="1" pl={{ base: 0, lg: 4 }}>
-        <Heading size="md" mb={4}>Related Dishes:</Heading>
-        {relatedPosts && relatedPosts.length > 0 ? (
-          relatedPosts.map((relatedPost) => (
-            <HStack
-              key={relatedPost.ID}
-              p={3}
-              shadow="md"
-              borderWidth="1px"
-              borderRadius="md"
-              mb={4}
-              cursor="pointer"
-              onClick={() => window.location.href = `/post/${relatedPost.ID}`}
-            >
-              <Image
-                src={relatedPost.thumbnailUrl || 'https://via.placeholder.com/100'}
-                alt={relatedPost.Title}
-                boxSize="100px"
-                borderRadius="md"
-                objectFit="cover"
-              />
-              <Box>
-                <Text fontWeight="bold">{relatedPost.Title}</Text>
-                <Text fontSize="sm" color="gray.600">{relatedPost.Country}</Text>
+          <Box mt={8}>
+            <Heading size="md" mb={4}>Comments:</Heading>
+
+            {user ? (
+              <Box as="form" onSubmit={handleComment} mb={4}>
+                <Textarea
+                  placeholder="Write your comment..."
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  mb={2}
+                />
+                <Button type="submit" colorScheme="blue"  isDisabled={!commentText}>
+                  Add Comment
+                </Button>
               </Box>
-            </HStack>
-          ))
-        ) : (
-          <Text>No related dishes found.</Text>
-        )}
+            ) : (
+              <Text>Please log in to comment</Text>
+            )}
+
+            <Divider my={4} />
+
+            {post.Comments && post.Comments.length > 0 ? (
+              <VStack align="start" spacing={4} mt={2} w="full">
+                {post.Comments.map((comment, index) => (
+                  <Flex
+                    key={index}
+                    p={3}
+                    shadow="md"
+                    borderWidth="1px"
+                    borderRadius="md"
+                    w="full"
+                    direction="column"
+                    alignItems="flex-start"
+                  >
+                    <Text fontSize="sm" color="gray.600">
+                      {comment.Name} - {new Date(comment.Created * 1000).toLocaleString()}
+                    </Text>
+                    <Text mt={1}>{comment.Text}</Text>
+                  </Flex>
+                ))}
+              </VStack>
+            ) : (
+              <Text>No comments yet. Be the first to comment!</Text>
+            )}
+          </Box>
+        </Box>
+
+        <Box flex="1" pl={{ base: 0, lg: 4 }}>
+          <Heading size="md" mb={4}>Related Dishes:</Heading>
+          {relatedPosts && relatedPosts.length > 0 ? (
+            relatedPosts.map((relatedPost) => (
+              <HStack
+                key={relatedPost.ID}
+                p={3}
+                shadow="md"
+                borderWidth="1px"
+                borderRadius="md"
+                mb={4}
+                cursor="pointer"
+                onClick={() => window.location.href = `/post/${relatedPost.ID}`}
+                _hover={{ shadow: 'lg', bg: 'gray.100' }}
+              >
+                <Image
+                  src={relatedPost.thumbnailUrl || 'https://via.placeholder.com/100'}
+                  alt={relatedPost.Title}
+                  boxSize="100px"
+                  borderRadius="md"
+                  objectFit="cover"
+                />
+                <Box>
+                  <Text fontWeight="bold">{relatedPost.Title}</Text>
+                  <Text fontSize="sm" color="gray.600">{relatedPost.Country}</Text>
+                </Box>
+              </HStack>
+            ))
+          ) : (
+            <Text>No related dishes found.</Text>
+          )}
+        </Box>
       </Box>
-    </Flex>
+    </Box>
   );
 };
 
