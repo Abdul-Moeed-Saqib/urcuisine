@@ -59,31 +59,17 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	post.Likes = 0
 	post.Dislikes = 0
 	post.Comments = []models.Comment{}
-
-	createdAt := time.Now().Unix()
-	postMap := bson.M{
-		"_id":         post.ID,
-		"userID":      post.UserID,
-		"title":       post.Title,
-		"description": post.Description,
-		"videoURL":    post.VideoURL,
-		"recipe":      post.Recipe,
-		"country":     post.Country,
-		"likes":       post.Likes,
-		"dislikes":    post.Dislikes,
-		"comments":    post.Comments,
-		"createdAt":   createdAt,
-	}
+	post.CreatedAt = time.Now().Unix()
 
 	postCollection := config.DB.Collection("posts")
 
-	_, err := postCollection.InsertOne(context.Background(), postMap)
+	_, err := postCollection.InsertOne(context.Background(), post)
 	if err != nil {
 		http.Error(w, "Could not create post", http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(postMap)
+	json.NewEncoder(w).Encode(post)
 }
 
 // handles fetching all posts

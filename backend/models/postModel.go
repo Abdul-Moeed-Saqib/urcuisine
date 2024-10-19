@@ -15,6 +15,7 @@ type Post struct {
 	Likes       int                `bson:"likes,omitempty"`
 	Dislikes    int                `bson:"dislikes,omitempty"`
 	Comments    []Comment          `bson:"comments,omitempty"`
+	CreatedAt   int64              `bson:"createdAt,omitempty"`
 }
 
 type Comment struct {

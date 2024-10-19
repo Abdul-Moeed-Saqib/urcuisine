@@ -2,7 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
-import { Box, Button, Text, Heading, Textarea, VStack, HStack, Divider, Flex, Image, useToast, Tooltip } from '@chakra-ui/react';
+import { formatDistanceToNow, fromUnixTime } from 'date-fns';
+import { 
+  Box, 
+  Button, 
+  Text, 
+  Heading, 
+  Textarea, 
+  VStack, 
+  HStack, 
+  Divider, 
+  Flex, 
+  Image, 
+  useToast, 
+  Tooltip, 
+  List, 
+  ListItem, 
+  ListIcon  } from '@chakra-ui/react';
+  import { MinusIcon } from '@chakra-ui/icons';
 
 const PostDetails = () => {
   const { id } = useParams();
@@ -195,6 +212,26 @@ const PostDetails = () => {
       <Box maxW="1200px" w="100%" display="flex" flexDirection={{ base: 'column', lg: 'row' }} gap={8}>
         <Box flex="3">
           <Heading mb={2}>{post.Title}</Heading>
+          <Box
+              padding="4"
+              border="1px"
+              borderColor="gray.200"
+              borderRadius="md"
+              boxShadow="md"
+              marginBottom="4"
+            >
+              <Box className="post-meta" marginBottom="2">
+                <Tooltip label={fromUnixTime(post.CreatedAt).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })} placement="top">
+                  <Text fontSize="sm" color="gray.600">
+                    Created {formatDistanceToNow(fromUnixTime(post.CreatedAt))} ago
+                  </Text>
+                </Tooltip>
+              </Box>
+
+              <Text fontSize="lg" color="gray.700">
+                {post.Description}
+              </Text>
+            </Box>
           {youtubeEmbedUrl && (
             <Box mb={4} display="flex" justifyContent="center">
               <iframe
@@ -208,11 +245,6 @@ const PostDetails = () => {
               ></iframe>
           </Box>
           )}
-          <Text fontSize="lg" color="gray.600" mb={4}>
-            <Tooltip label={`Created at: ${new Date(post.createdAt).toLocaleDateString()}`} aria-label="Post Creation Date">
-              <span>{post.Description}</span>
-            </Tooltip>
-          </Text>
 
           {user && post.UserID === user.id && (
             <Button onClick={handleUpdatePost} colorScheme="blue" mt={4}>
@@ -220,9 +252,16 @@ const PostDetails = () => {
             </Button>
           )}
 
-          <Box mt={4}>
+          <Box mt={4} ml={20} textAlign="left">
             <Heading size="md" mb={2}>Recipe:</Heading>
-            <Text>{post.Recipe}</Text>
+            <List spacing={2}>
+              {post.Recipe.split(',').map((ingredient, index) => (
+                <ListItem key={index}>
+                  <ListIcon as={MinusIcon} color="green.500" />
+                  {ingredient.trim()}
+                </ListItem>
+              ))}
+            </List>
           </Box>
 
           <HStack spacing={4} mt={6}>

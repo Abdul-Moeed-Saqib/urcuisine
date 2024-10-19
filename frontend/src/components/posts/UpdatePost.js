@@ -21,12 +21,21 @@ import {
   useToast,
   Text,
   Divider,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
 } from '@chakra-ui/react';
 
 const UpdatePost = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const { user } = useAuth();
 
   const [post, setPost] = useState(null);
@@ -97,6 +106,18 @@ const UpdatePost = () => {
     }
   };
 
+  const handleDeletePost = async () => {
+    try {
+      await axios.delete(`/posts/${id}`);
+      toast({ title: 'Post deleted!', status: 'success', duration: 3000 });
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting post', error);
+      toast({ title: 'Error deleting post!', status: 'error', duration: 3000 });
+    }
+    onClose();
+  };
+
   if (!post) return <div>Loading...</div>;
 
   return (
@@ -163,6 +184,9 @@ const UpdatePost = () => {
           <Button onClick={handleUpdatePost} colorScheme="teal" size="lg" width="full">
             Update Post
           </Button>
+          <Button onClick={onOpen} colorScheme="red" size="lg">
+              Delete Post
+            </Button>
         </VStack>
 
         <Box flex="1" p={6} bg="gray.50" borderRadius="md" boxShadow="md">
@@ -184,6 +208,25 @@ const UpdatePost = () => {
           </Text>
         </Box>
       </Box>
+
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Delete Post</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <Text>Are you sure you want to delete this post? This action cannot be undone.</Text>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={onClose}>
+              Cancel
+            </Button>
+            <Button colorScheme="red" onClick={handleDeletePost}>
+              Delete
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Flex>
   );
 };
