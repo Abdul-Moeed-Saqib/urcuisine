@@ -10,6 +10,8 @@ import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import CreatePost from './components/posts/CreatePost';
 import UpdatePost from './components/posts/UpdatePost';
+import Category from './pages/Category';
+import SearchResults from './pages/SearchResults';
 
 function App() {
   return (
@@ -36,6 +38,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/category" element={<Category />} />
+        <Route path="/search/:query" element={<SearchResults />} />
       </Routes>
       <Footer />
     </div>
