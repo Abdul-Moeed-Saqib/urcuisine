@@ -34,31 +34,35 @@ const Category = () => {
         </Box>
       )}
 
-      <ComposableMap>
-        <Geographies geography={geoUrl}>
-          {({ geographies }) =>
-            geographies.map((geo) => (
-              <Geography
-                key={geo.rsmKey}
-                geography={geo}
-                onMouseEnter={() => {
-                  const { name } = geo.properties;
-                  setHoveredCountry(name);
-                }}
-                onMouseLeave={() => {
-                  setHoveredCountry('');
-                }}
-                onClick={() => navigate(`/posts/country/${geo.properties.name}`)}
-                style={{
-                  default: { fill: "#D6D6DA", outline: "none" },
-                  hover: { fill: "#F53", outline: "none" },
-                  pressed: { fill: "#E42", outline: "none" },
-                }}
-              />
-            ))
-          }
-        </Geographies>
-      </ComposableMap>
+      <Box transform="translateX(-50px)"> 
+        <ComposableMap>
+          <Geographies geography={geoUrl}>
+            {({ geographies }) =>
+              geographies
+                .filter((geo) => geo.properties.name !== "Antarctica") 
+                .map((geo) => (
+                  <Geography
+                    key={geo.rsmKey}
+                    geography={geo}
+                    onMouseEnter={() => {
+                      const { name } = geo.properties;
+                      setHoveredCountry(name);
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredCountry('');
+                    }}
+                    onClick={() => navigate(`/posts/country/${geo.properties.name}`)}
+                    style={{
+                      default: { fill: "#D6D6DA", outline: "none" },
+                      hover: { fill: "#F53", outline: "none" },
+                      pressed: { fill: "#E42", outline: "none" },
+                    }}
+                  />
+                ))
+            }
+          </Geographies>
+        </ComposableMap>
+      </Box>
     </Box>
   );
 };
