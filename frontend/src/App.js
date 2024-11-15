@@ -12,6 +12,7 @@ import CreatePost from './components/posts/CreatePost';
 import UpdatePost from './components/posts/UpdatePost';
 import Category from './pages/Category';
 import SearchResults from './pages/SearchResults';
+import CountryPosts from './components/posts/CountryPosts';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
         />
         <Route path="/category" element={<Category />} />
         <Route path="/search/:query" element={<SearchResults />} />
+        <Route path="/country/:country" element={<CountryPosts />} />
       </Routes>
       <Footer />
     </div>

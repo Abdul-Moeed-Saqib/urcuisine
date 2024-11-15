@@ -11,7 +11,7 @@ func PostRoutes(router *mux.Router) {
 	router.HandleFunc("/posts", controllers.GetPosts).Methods("GET")
 	router.HandleFunc("/posts/{id}", controllers.GetPost).Methods("GET")
 	router.HandleFunc("/posts/{id}/related", controllers.GetRelatedPosts).Methods("GET")
-	router.HandleFunc("/posts/country", controllers.GetPostsByCountry).Methods("GET")
+	router.HandleFunc("/posts/country/{country}", controllers.GetPostsByCountry).Methods("GET")
 
 	authRequired := router.PathPrefix("/posts").Subrouter()
 	authRequired.Use(middlewares.AuthMiddleware)

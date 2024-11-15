@@ -149,6 +149,50 @@ func GetPost(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(post)
 }
 
+func GetPostsByCountry(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	country := mux.Vars(r)["country"]
+
+	postCollection := config.DB.Collection("posts")
+	userCollection := config.DB.Collection("users")
+
+	cursor, err := postCollection.Find(context.Background(), bson.M{"country": country})
+	if err != nil {
+		http.Error(w, "Could not fetch posts", http.StatusInternalServerError)
+		return
+	}
+	defer cursor.Close(context.Background())
+
+	var postsWithUserInfo []map[string]interface{}
+
+	for cursor.Next(context.Background()) {
+		var post models.Post
+		if err := cursor.Decode(&post); err != nil {
+			http.Error(w, "Error decoding post", http.StatusInternalServerError)
+			return
+		}
+
+		var user models.User
+		err := userCollection.FindOne(context.Background(), bson.M{"_id": post.UserID}).Decode(&user)
+		if err != nil {
+			http.Error(w, "Could not fetch user details", http.StatusInternalServerError)
+			return
+		}
+
+		postWithUser := map[string]interface{}{
+			"ID":        post.ID,
+			"Title":     post.Title,
+			"UserName":  user.Name,
+			"Country":   post.Country,
+			"CreatedAt": post.CreatedAt,
+		}
+		postsWithUserInfo = append(postsWithUserInfo, postWithUser)
+	}
+
+	json.NewEncoder(w).Encode(postsWithUserInfo)
+}
+
 // handles fetching related dishes based on the post's country
 func GetRelatedPosts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -187,35 +231,6 @@ func GetRelatedPosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(relatedPosts)
-}
-
-func GetPostsByCountry(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	country := r.URL.Query().Get("country")
-	if country == "" {
-		http.Error(w, "Country not specified", http.StatusBadRequest)
-		return
-	}
-
-	var posts []models.Post
-	postCollection := config.DB.Collection("posts")
-
-	filter := bson.M{"country": country}
-	cursor, err := postCollection.Find(context.Background(), filter)
-	if err != nil {
-		http.Error(w, "Could not fetch posts", http.StatusInternalServerError)
-		return
-	}
-	defer cursor.Close(context.Background())
-
-	for cursor.Next(context.Background()) {
-		var post models.Post
-		cursor.Decode(&post)
-		posts = append(posts, post)
-	}
-
-	json.NewEncoder(w).Encode(posts)
 }
 
 // handles updating a specific post
